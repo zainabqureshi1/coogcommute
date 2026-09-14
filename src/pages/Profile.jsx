@@ -15,6 +15,10 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [otp, setOtp] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState("");
+
   const [myProfile, setMyProfile] = useState(undefined);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: "", location: AREAS[0], days: [], arrives: "", bio: "", women_only: false });
@@ -133,6 +137,30 @@ export default function Profile() {
       return;
     }
     setStep("sent");
+  }
+
+  async function verifyCode() {
+    setVerifyError("");
+    const trimmedCode = otp.trim();
+    if (!trimmedCode) {
+      setVerifyError("Enter the code from your email.");
+      return;
+    }
+
+    setVerifying(true);
+    const { error: verifyErr } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: trimmedCode,
+      type: "email",
+    });
+    setVerifying(false);
+
+    if (verifyErr) {
+      setVerifyError(verifyErr.message);
+      return;
+    }
+    // onAuthStateChange will pick up the new session automatically.
+    setOtp("");
   }
 
   async function signOut() {
@@ -406,10 +434,36 @@ export default function Profile() {
             className="bg-cream rounded-lg p-6 text-center">
             <h2 className="font-bold text-ink text-lg mb-1">Check your email</h2>
             <p className="text-sm text-ink/60 leading-relaxed mb-5">
-              We sent a magic sign-in link to <span className="font-semibold">{email}</span>.
-              Click the link in your email to log in automatically.
+              We sent a code to <span className="font-semibold">{email}</span>.
+              Enter it below to sign in. <strong>Check your junk/spam folder</strong> if you
+              don't see it in your inbox within a minute or two.
             </p>
-            <button onClick={() => { setStep("email"); setError(""); }}
+
+            <input
+              type="text"
+              inputMode="numeric"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              placeholder="12345678"
+              maxLength={8}
+              className="w-full px-4 py-3 rounded-md bg-white border border-white text-center tracking-[0.4em] text-lg font-bold text-ink placeholder-ink/30 outline-none focus:ring-2 focus:ring-primary/20 mb-3"
+            />
+
+            {verifyError && (
+              <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-md px-3 py-2.5 text-xs text-red-700 mb-3 text-left">
+                <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
+                <span>{verifyError}</span>
+              </div>
+            )}
+
+            <button onClick={verifyCode} disabled={verifying || !otp.trim()}
+              className="w-full py-3.5 rounded-md text-white font-bold disabled:opacity-40 flex items-center justify-center gap-2 mb-3"
+              style={{ backgroundColor: "#960C22" }}>
+              {verifying && <Loader2 size={16} className="animate-spin" />}
+              {verifying ? "Verifying…" : "Verify code"}
+            </button>
+
+            <button onClick={() => { setStep("email"); setError(""); setOtp(""); setVerifyError(""); }}
               className="text-xs text-ink/40 underline">
               Use a different email
             </button>

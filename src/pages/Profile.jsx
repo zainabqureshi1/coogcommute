@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { User, ChevronRight, Loader2, AlertCircle, LogOut, Check, Clock, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
-const UH_DOMAIN = "@cougarnet.uh.edu";
+const UH_DOMAINS = ["@cougarnet.uh.edu", "@uh.edu"];
 const AREAS = ["Katy", "Cypress", "Sugar Land", "Pearland", "Alvin", "Spring"];
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
@@ -27,8 +27,7 @@ export default function Profile() {
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [respondingTo, setRespondingTo] = useState(null);
 
-  // Check if someone's already signed in (e.g. they refreshed the page),
-  // and keep listening in case that changes.
+  // Check if someone's already signed in, and keep listening in case that changes.
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
@@ -115,17 +114,22 @@ export default function Profile() {
     setError("");
     const trimmed = email.trim().toLowerCase();
 
-    if (!trimmed.endsWith(UH_DOMAIN)) {
-      setError(`Please use your UH email (must end in ${UH_DOMAIN}).`);
+    const isValidDomain = UH_DOMAINS.some((domain) => trimmed.endsWith(domain));
+    if (!isValidDomain) {
+      setError(`Please use your UH email (must end in @uh.edu or @cougarnet.uh.edu).`);
       return;
     }
 
     setLoading(true);
+
+    // Redirect directly to the carpool page after login
+    const redirectUrl = `${window.location.origin}/carpool`;
+
     const { error: sendError } = await supabase.auth.signInWithOtp({
       email: trimmed,
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: redirectUrl,
       },
     });
     setLoading(false);
@@ -196,17 +200,13 @@ export default function Profile() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 pt-6 pb-10 space-y-4"></div>
-
       <div className="max-w-3xl mx-auto px-4 pt-6 pb-10 space-y-4">
-        {/* Still checking for an existing session — avoid a flash of the sign-in form */}
         {session === undefined && (
           <div className="flex justify-center py-10">
             <Loader2 size={22} className="animate-spin text-ink/30" />
           </div>
         )}
 
-        {/* Signed in */}
         {session && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             className="bg-cream rounded-lg p-6 text-center">
@@ -222,7 +222,6 @@ export default function Profile() {
           </motion.div>
         )}
 
-        {/* ── Carpool profile section — only shown when signed in ── */}
         {session && myProfile === undefined && (
           <div className="flex justify-center py-6">
             <Loader2 size={20} className="animate-spin text-ink/30" />
@@ -339,7 +338,6 @@ export default function Profile() {
           </motion.div>
         )}
 
-        {/* ── Incoming ride requests ── */}
         {session && incoming.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             className="bg-cream rounded-lg p-5">
@@ -373,7 +371,6 @@ export default function Profile() {
           </motion.div>
         )}
 
-        {/* Signed out — email step */}
         {session === null && step === "email" && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             className="bg-cream rounded-lg p-6 text-center">
@@ -389,7 +386,7 @@ export default function Profile() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="yourname@cougarnet.uh.edu"
+              placeholder="yourname@uh.edu or @cougarnet.uh.edu"
               className="w-full px-4 py-3 rounded-md bg-white border border-white text-sm text-ink placeholder-ink/40 outline-none focus:ring-2 focus:ring-primary/20 mb-3"
             />
 
@@ -406,11 +403,10 @@ export default function Profile() {
               {loading && <Loader2 size={16} className="animate-spin" />}
               {loading ? "Sending link…" : "Sign in with UH Email"}
             </button>
-            <p className="text-xs text-ink/40 mt-3">@cougarnet.uh.edu required</p>
+            <p className="text-xs text-ink/40 mt-3">@uh.edu or @cougarnet.uh.edu required</p>
           </motion.div>
         )}
 
-        {/* Signed out — link sent */}
         {session === null && step === "sent" && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             className="bg-cream rounded-lg p-6 text-center">
@@ -419,7 +415,7 @@ export default function Profile() {
               We sent a sign-in link to <span className="font-semibold">{email}</span>.
             </p>
             <p className="text-xs text-ink/40 leading-relaxed mb-5">
-              Click the link in that email and you'll land right back here, signed in.
+              Click the link in that email and you'll land directly on the carpool matching page.
             </p>
 
             <button onClick={() => { setStep("email"); setError(""); }}

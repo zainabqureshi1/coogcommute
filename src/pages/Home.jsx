@@ -4,20 +4,9 @@ import { motion } from "framer-motion";
 import { ChevronRight, Users, Calculator, Bell } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08 } },
-};
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
-};
-
 export default function Home() {
   const [alertCount, setAlertCount] = useState(0);
 
-  // Real count from your campus_events table — not the old hardcoded array
   useEffect(() => {
     (async () => {
       const { count } = await supabase
@@ -50,89 +39,71 @@ export default function Home() {
   ];
 
   return (
-        <div className="bg-white min-h-screen flex flex-col">
-      {/* ── Hero — solid red, no photo ── */}
-      <div className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #CC0000 0%, #7A0000 100%)" }}>
-        {/* Decorative circles */}
-        <motion.div
-          animate={{ scale: [1, 1.12, 1], opacity: [0.12, 0.2, 0.12] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-white pointer-events-none"
+    <div className="bg-white min-h-screen flex flex-col">
+      <div className="relative overflow-hidden min-h-[420px] md:min-h-[560px] flex items-end">
+        <img
+          src="/hero-bg.jpg"
+          alt="Traffic on a Houston freeway near UH"
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => (e.target.style.display = "none")}
         />
+        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+
         <motion.div
-          animate={{ scale: [1, 1.08, 1], opacity: [0.07, 0.13, 0.07] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-          className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-white pointer-events-none"
-        />
-
-        {/* Hero text */}
-<div className="relative z-10 max-w-6xl mx-auto px-6 pt-8 pb-8 md:pt-10 md:pb-10">
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.45 }}
-            className="text-white font-extrabold text-3xl md:text-5xl leading-tight mb-2 md:max-w-2xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="relative z-10 max-w-6xl mx-auto w-full px-6 pt-16 pb-8 md:pb-12"
+        >
+          <h1
+            className="text-white font-extrabold text-4xl md:text-6xl leading-[1.05] max-w-xl"
+            style={{ textShadow: "0 2px 16px rgba(0,0,0,0.5)" }}
           >
-            Commute smarter.<br />Arrive stress-free.
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.25 }}
-            className="text-white/80 text-sm italic font-medium"
+            Commute smarter.
+            <br />
+            Arrive stress-free.
+          </h1>
+          <p className="text-white/90 text-base md:text-lg mt-4 max-w-md leading-relaxed">
+            Built by a UH student who's driven the Katy Freeway one too many times. Match with Coogs nearby, split gas, and skip the worst of game-day traffic.
+          </p>
+          <Link
+            to="/carpool"
+            className="inline-flex items-center gap-1.5 mt-6 bg-primary text-white font-bold text-sm px-5 py-3 rounded-md hover:bg-btn transition-colors"
           >
-            A commuter companion for UH students.
-          </motion.p>
-        </div>
+            Find a ride <ChevronRight size={16} />
+          </Link>
+        </motion.div>
       </div>
 
-      {/* ── Everything below the hero — UH garage photo as full-bleed background ──
-          Drop your image at public/hero-bg.jpg — same file the hero used to show,
-          just moved down here per your wireframe. Adjust opacity-50 to taste. */}
-            <div className="relative overflow-hidden flex-1">
-        <div className="absolute inset-0">
-          <img
-            src="/hero-bg.jpg"
-            alt="UH Campus"
-            className="w-full h-full object-cover opacity-50"
-            onError={(e) => (e.target.style.display = "none")}
-          />
-        </div>
-
-        <div className="relative z-10 max-w-6xl mx-auto px-4 py-5 md:py-10 space-y-3">
-          <span className="inline-block text-xs font-semibold text-ink/70 uppercase tracking-widest px-2 py-1 rounded bg-white/70 backdrop-blur-sm">
-            What do you need?
-          </span>
-
-          <motion.div variants={stagger} initial="hidden" animate="show"
-            className="space-y-3 md:space-y-0 md:grid md:grid-cols-3 md:gap-4">
-            {features.map((f) => (
-              <motion.div key={f.to} variants={fadeUp} className="md:h-full">
-                <Link to={f.to} className="block h-full">
-                  <div className="bg-[#F6F3EE] border border-gray-100 rounded-lg px-4 py-4 md:p-6 flex items-center md:flex-col md:items-start md:text-left gap-4 md:gap-0 hover:-translate-y-0.5 transition-all duration-200 h-full">
-                    <div className="w-11 h-11 md:w-12 md:h-12 rounded-md flex items-center justify-center flex-shrink-0 md:mb-4 bg-primary/5 border border-primary/10">
-                      <f.icon size={20} className="text-primary" />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-[15px] md:text-lg text-ink">{f.label}</p>
-                      <p className="text-xs md:text-sm text-ink/50 mt-0.5">{f.sub}</p>
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-shrink-0 md:mt-4">
-                      {f.badge && (
-                        <span className="text-xs font-bold px-2 py-0.5 rounded border border-primary text-primary">
-                          {f.badge}
-                        </span>
-                      )}
-                      <ChevronRight size={16} className="text-ink/25" />
-                    </div>
+      <div className="max-w-6xl mx-auto w-full px-4 py-8 md:py-12">
+        <span className="inline-block text-xs font-semibold text-ink/50 uppercase tracking-widest px-1 mb-3">
+          What do you need?
+        </span>
+        <div className="grid md:grid-cols-3 gap-4">
+          {features.map((f) => (
+            <Link key={f.to} to={f.to} className="block group">
+              <div className="h-full bg-[#F6F3EE] rounded-lg p-5 md:p-6 flex flex-col justify-between border-b-4 border-transparent group-hover:border-primary transition-colors">
+                <div>
+                  <div className="w-11 h-11 rounded-md flex items-center justify-center bg-primary/5 border border-primary/10">
+                    <f.icon size={20} className="text-primary" />
                   </div>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
+                  <p className="font-bold text-lg text-ink mt-4">{f.label}</p>
+                  <p className="text-sm text-ink/50 mt-1">{f.sub}</p>
+                </div>
+                <div className="flex items-center gap-2 mt-6">
+                  {f.badge && (
+                    <span className="text-xs font-bold px-2 py-0.5 rounded border border-primary text-primary">
+                      {f.badge}
+                    </span>
+                  )}
+                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary group-hover:gap-2 transition-all">
+                    View <ChevronRight size={16} />
+                  </span>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
     </div>

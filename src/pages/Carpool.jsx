@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Search, ChevronLeft, ShieldCheck, CheckCircle2, Star, Loader2, Lock, Clock } from "lucide-react";
 import { supabase } from "../lib/supabase";
@@ -10,16 +10,20 @@ function StarRow({ rating, size = 14 }) {
   const r = rating || 0;
   return (
     <div className="flex gap-0.5">
-      {[1,2,3,4,5].map((s) => (
-        <Star key={s} size={size}
-          className={s <= Math.round(r) ? "fill-ink text-ink" : "text-gray-200 fill-gray-200"} />
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star
+          key={s}
+          size={size}
+          className={s <= Math.round(r) ? "fill-ink text-ink" : "text-gray-200 fill-gray-200"}
+        />
       ))}
     </div>
   );
 }
 
 export default function Carpool() {
-  const [session, setSession] = useState(undefined);
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [profiles, setProfiles] = useState([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [fetchError, setFetchError] = useState("");
@@ -36,10 +40,16 @@ export default function Carpool() {
   const [submittingRating, setSubmittingRating] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
+      setLoading(false);
     });
+
     return () => listener.subscription.unsubscribe();
   }, []);
 
@@ -89,9 +99,6 @@ export default function Carpool() {
     if (!error) setRequestRow(data);
   }
 
-  // Requester marks the ride complete and rates the driver.
-  // Recomputes the driver's real average rating/ride count from every
-  // completed, rated request they've ever had — no fake numbers.
   async function submitRating() {
     if (ratingValue === 0) return;
     setSubmittingRating(true);
@@ -134,33 +141,44 @@ export default function Carpool() {
     return matchSearch && matchArea && matchGender;
   });
 
-  if (session === null) return (
-    <div className="bg-white min-h-screen">
-      <div className="bg-primary py-4">
-        <div className="max-w-3xl mx-auto px-4">
-          <h1 className="text-white font-bold text-lg text-center">Carpool Matching</h1>
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 size={24} className="animate-spin text-ink/30" />
+      </div>
+    );
+  }
+
+  const userEmail = session?.user?.email || "";
+  const isUHEmail =
+    userEmail.toLowerCase().endsWith("@uh.edu") ||
+    userEmail.toLowerCase().endsWith("@cougarnet.uh.edu");
+
+  if (!session || !isUHEmail) {
+    return (
+      <div className="bg-white min-h-screen">
+        <div className="bg-primary py-4">
+          <div className="max-w-3xl mx-auto px-4">
+            <h1 className="text-white font-bold text-lg text-center">Carpool Matching</h1>
+          </div>
+        </div>
+        <div className="max-w-3xl mx-auto px-4 py-16 text-center">
+          <Lock size={28} className="text-ink/20 mx-auto mb-3" />
+          <p className="font-bold text-ink mb-1">Sign in to see real matches</p>
+          <p className="text-sm text-ink/50 mb-5 max-w-xs mx-auto">
+            Carpool profiles are only visible to verified UH students, to keep everyone's info safe.
+          </p>
+          <Link
+            to="/profile"
+            className="inline-block px-5 py-3 rounded-md text-white font-bold text-sm"
+            style={{ backgroundColor: "#960C22" }}
+          >
+            Sign in with UH Email
+          </Link>
         </div>
       </div>
-      <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <Lock size={28} className="text-ink/20 mx-auto mb-3" />
-        <p className="font-bold text-ink mb-1">Sign in to see real matches</p>
-        <p className="text-sm text-ink/50 mb-5 max-w-xs mx-auto">
-          Carpool profiles are only visible to verified UH students, to keep everyone's info safe.
-        </p>
-        <Link to="/profile"
-          className="inline-block px-5 py-3 rounded-md text-white font-bold text-sm"
-          style={{ backgroundColor: "#960C22" }}>
-          Sign in with UH Email
-        </Link>
-      </div>
-    </div>
-  );
-
-  if (session === undefined) return (
-    <div className="flex justify-center items-center min-h-screen">
-      <Loader2 size={24} className="animate-spin text-ink/30" />
-    </div>
-  );
+    );
+  }
 
   if (selected) {
     const iAmRequester = requestRow && requestRow.requester_id === session.user.id;
@@ -187,7 +205,9 @@ export default function Carpool() {
             </h2>
             <div className="flex items-center justify-center gap-1.5 mt-1.5">
               <StarRow rating={selected.rating} size={14} />
-              <span className="text-xs text-ink/40">{selected.rating || "New"} {selected.rides ? `(${selected.rides} rides)` : ""}</span>
+              <span className="text-xs text-ink/40">
+                {selected.rating || "New"} {selected.rides ? `(${selected.rides} rides)` : ""}
+              </span>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-white/60 text-left">
@@ -197,7 +217,9 @@ export default function Carpool() {
               </div>
               <div>
                 <p className="text-[10px] text-ink/40 uppercase tracking-wide">Schedule</p>
-                <p className="text-sm text-ink font-medium mt-0.5">{selected.days} · {selected.arrives}</p>
+                <p className="text-sm text-ink font-medium mt-0.5">
+                  {selected.days} · {selected.arrives}
+                </p>
               </div>
             </div>
 
@@ -220,10 +242,13 @@ export default function Carpool() {
               <Loader2 size={18} className="animate-spin text-ink/30" />
             </div>
           ) : !requestRow ? (
-            <motion.button whileTap={{ scale: 0.98 }}
-              onClick={sendRequest} disabled={sending}
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={sendRequest}
+              disabled={sending}
               className="w-full py-4 rounded-md text-white font-bold text-base disabled:opacity-40 flex items-center justify-center gap-2"
-              style={{ backgroundColor: "#960C22" }}>
+              style={{ backgroundColor: "#960C22" }}
+            >
               {sending && <Loader2 size={16} className="animate-spin" />}
               {sending ? "Sending…" : "Request a ride"}
             </motion.button>
@@ -242,7 +267,9 @@ export default function Carpool() {
             <div className="w-full py-5 rounded-md bg-green-50 border border-green-200 text-center">
               <CheckCircle2 size={22} className="text-green-700 mx-auto mb-1" />
               <p className="font-bold text-green-800">
-                {iAmRequester ? `You rated this ride ${requestRow.rating} star${requestRow.rating > 1 ? "s" : ""}` : "Ride marked complete"}
+                {iAmRequester
+                  ? `You rated this ride ${requestRow.rating} star${requestRow.rating > 1 ? "s" : ""}`
+                  : "Ride marked complete"}
               </p>
             </div>
           ) : requestRow.status === "accepted" && iAmRequester ? (
@@ -250,15 +277,21 @@ export default function Carpool() {
               <p className="font-bold text-ink text-sm mb-1">Rode with {selected.name}?</p>
               <p className="text-xs text-ink/50 mb-3">Mark it complete and leave a rating.</p>
               <div className="flex gap-1.5 mb-4">
-                {[1,2,3,4,5].map((s) => (
+                {[1, 2, 3, 4, 5].map((s) => (
                   <button key={s} onClick={() => setRatingValue(s)}>
-                    <Star size={26} className={s <= ratingValue ? "fill-ink text-ink" : "text-gray-200 fill-gray-200"} />
+                    <Star
+                      size={26}
+                      className={s <= ratingValue ? "fill-ink text-ink" : "text-gray-200 fill-gray-200"}
+                    />
                   </button>
                 ))}
               </div>
-              <button onClick={submitRating} disabled={ratingValue === 0 || submittingRating}
+              <button
+                onClick={submitRating}
+                disabled={ratingValue === 0 || submittingRating}
                 className="w-full py-3 rounded-md text-white font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2"
-                style={{ backgroundColor: "#960C22" }}>
+                style={{ backgroundColor: "#960C22" }}
+              >
                 {submittingRating && <Loader2 size={15} className="animate-spin" />}
                 {submittingRating ? "Submitting…" : "Mark complete & rate"}
               </button>
@@ -295,22 +328,33 @@ export default function Carpool() {
           <div className="flex gap-2 mb-2.5">
             <div className="flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-md px-3 py-2.5">
               <Search size={15} className="text-gray-400 flex-shrink-0" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search..." className="flex-1 text-sm bg-transparent outline-none text-ink placeholder-gray-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search..."
+                className="flex-1 text-sm bg-transparent outline-none text-ink placeholder-gray-400"
+              />
             </div>
           </div>
 
           <div className="flex gap-2 overflow-x-auto hide-scroll">
             {AREAS.map((a) => (
-              <button key={a} onClick={() => setArea(a)}
+              <button
+                key={a}
+                onClick={() => setArea(a)}
                 className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-md border transition-colors ${
                   area === a ? "bg-btn text-white border-btn" : "bg-white text-ink border-gray-200"
-                }`}>{a}</button>
+                }`}
+              >
+                {a}
+              </button>
             ))}
-            <button onClick={() => setWomenOnly(!womenOnly)}
+            <button
+              onClick={() => setWomenOnly(!womenOnly)}
               className={`flex-shrink-0 flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-md border transition-colors ${
                 womenOnly ? "bg-btn text-white border-btn" : "bg-white text-ink border-gray-200"
-              }`}>
+              }`}
+            >
               <ShieldCheck size={12} /> Women-only
             </button>
           </div>
@@ -341,10 +385,14 @@ export default function Carpool() {
         ) : (
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
             {filtered.map((m, i) => (
-              <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
                 onClick={() => setSelected(m)}
-                className="bg-white border border-gray-100 rounded-lg p-4 flex flex-col items-center text-center cursor-pointer hover:shadow-md transition-shadow">
+                className="bg-white border border-gray-100 rounded-lg p-4 flex flex-col items-center text-center cursor-pointer hover:shadow-md transition-shadow"
+              >
                 <div className="w-14 h-14 rounded-full bg-cream flex items-center justify-center mb-2">
                   <span className="text-lg font-bold text-btn">{m.name.charAt(0)}</span>
                 </div>
@@ -357,7 +405,9 @@ export default function Carpool() {
                   <span className="text-[11px] text-ink/40">{m.rating || "New"}</span>
                 </div>
                 <p className="text-xs text-ink/50">{m.location}, TX</p>
-                <p className="text-xs text-ink/50">{m.days} · {m.arrives}</p>
+                <p className="text-xs text-ink/50">
+                  {m.days} · {m.arrives}
+                </p>
                 {m.women_only && (
                   <div className="flex items-center gap-1 mt-2 text-[11px] text-ink/50">
                     <ShieldCheck size={11} className="text-primary" />

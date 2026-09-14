@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { User, ChevronRight, Loader2, AlertCircle, LogOut, Check, Clock, X } from "lucide-react";
+import { User, ChevronRight, Loader2, AlertCircle, LogOut, Check, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 const UH_DOMAINS = ["@cougarnet.uh.edu", "@uh.edu"];
@@ -9,25 +9,22 @@ const AREAS = ["Katy", "Cypress", "Sugar Land", "Pearland", "Alvin", "Spring"];
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 export default function Profile() {
-  const [session, setSession] = useState(undefined); // undefined = still checking, null = signed out
+  const [session, setSession] = useState(undefined);
   const [step, setStep] = useState("email"); // "email" | "sent"
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Carpool profile (separate from auth — this is the row in the `profiles` table)
-  const [myProfile, setMyProfile] = useState(undefined); // undefined = loading, null = doesn't exist yet
+  const [myProfile, setMyProfile] = useState(undefined);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: "", location: AREAS[0], days: [], arrives: "", bio: "", women_only: false });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
-  // Incoming ride requests — real rows from the ride_requests table
   const [incoming, setIncoming] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [respondingTo, setRespondingTo] = useState(null);
 
-  // Check if someone's already signed in, and keep listening in case that changes.
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
@@ -36,7 +33,6 @@ export default function Profile() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // Once signed in, load their existing carpool profile row, if any
   useEffect(() => {
     if (!session) {
       setMyProfile(session === null ? null : undefined);
@@ -68,7 +64,6 @@ export default function Profile() {
     })();
   }, [session]);
 
-  // Load anyone who's sent *you* a pending ride request
   useEffect(() => {
     if (!session) return;
     (async () => {
@@ -122,8 +117,7 @@ export default function Profile() {
 
     setLoading(true);
 
-    // Redirect directly to the carpool page after login
-    const redirectUrl = `${window.location.origin}/carpool`;
+    const redirectUrl = window.location.origin + window.location.pathname;
 
     const { error: sendError } = await supabase.auth.signInWithOtp({
       email: trimmed,
@@ -410,14 +404,11 @@ export default function Profile() {
         {session === null && step === "sent" && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             className="bg-cream rounded-lg p-6 text-center">
-            <h2 className="font-bold text-ink text-lg mb-1">Check your inbox</h2>
-            <p className="text-sm text-ink/60 leading-relaxed mb-1">
-              We sent a sign-in link to <span className="font-semibold">{email}</span>.
+            <h2 className="font-bold text-ink text-lg mb-1">Check your email</h2>
+            <p className="text-sm text-ink/60 leading-relaxed mb-5">
+              We sent a magic sign-in link to <span className="font-semibold">{email}</span>.
+              Click the link in your email to log in automatically.
             </p>
-            <p className="text-xs text-ink/40 leading-relaxed mb-5">
-              Click the link in that email and you'll land directly on the carpool matching page.
-            </p>
-
             <button onClick={() => { setStep("email"); setError(""); }}
               className="text-xs text-ink/40 underline">
               Use a different email

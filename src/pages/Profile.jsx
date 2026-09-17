@@ -21,7 +21,7 @@ export default function Profile() {
 
   const [myProfile, setMyProfile] = useState(undefined);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: "", location: AREAS[0], days: [], arrives: "", bio: "", women_only: false });
+  const [form, setForm] = useState({ name: "", location: AREAS[0], customLocation: "", days: [], arrives: "", bio: "", women_only: false });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
@@ -56,9 +56,12 @@ export default function Profile() {
       }
       setMyProfile(data);
       if (data) {
+        const savedLocation = data.location || AREAS[0];
+        const isKnownArea = AREAS.includes(savedLocation);
         setForm({
           name: data.name || "",
-          location: data.location || AREAS[0],
+          location: isKnownArea ? savedLocation : "Other",
+          customLocation: isKnownArea ? "" : savedLocation,
           days: data.days ? data.days.split("/") : [],
           arrives: data.arrives || "",
           bio: data.bio || "",
@@ -182,6 +185,12 @@ export default function Profile() {
       setSaveError("Please fill in your name, at least one day, and your arrival time.");
       return;
     }
+    if (form.location === "Other" && !form.customLocation.trim()) {
+      setSaveError("Please type in your neighborhood.");
+      return;
+    }
+
+    const finalLocation = form.location === "Other" ? form.customLocation.trim() : form.location;
 
     setSaving(true);
     const { data, error: upsertError } = await supabase
@@ -190,7 +199,7 @@ export default function Profile() {
         id: session.user.id,
         email: session.user.email,
         name: form.name.trim(),
-        location: form.location,
+        location: finalLocation,
         days: form.days.join("/"),
         arrives: form.arrives.trim(),
         bio: form.bio.trim(),
@@ -272,7 +281,16 @@ export default function Profile() {
               <select value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
                 className="w-full mt-1.5 px-3 py-2.5 rounded-md bg-white border border-white text-sm text-ink outline-none focus:ring-2 focus:ring-primary/20">
                 {AREAS.map((a) => <option key={a} value={a}>{a}, TX</option>)}
+                <option value="Other">Other (type your own)</option>
               </select>
+              {form.location === "Other" && (
+                <input
+                  value={form.customLocation}
+                  onChange={(e) => setForm((f) => ({ ...f, customLocation: e.target.value }))}
+                  placeholder="e.g. Missouri City, Humble, League City"
+                  className="w-full mt-1.5 px-3 py-2.5 rounded-md bg-white border border-white text-sm text-ink outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              )}
             </div>
 
             <div>

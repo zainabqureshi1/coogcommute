@@ -85,6 +85,8 @@ export default function Carpool() {
     return true;
   });
 
+  const hasOwnProfile = profiles.some((p) => p.id === session.user.id);
+
   return (
     <div className="bg-white min-h-screen pb-12">
       <div className="bg-primary py-4 text-center">
@@ -92,6 +94,22 @@ export default function Carpool() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 pt-6 space-y-4">
+        {!loadingProfiles && !hasOwnProfile && (
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 flex items-center justify-between gap-3">
+            <p className="text-sm text-ink">
+              <span className="font-bold">You haven't made a profile yet.</span>{" "}
+              Create one so other students can match with you too.
+            </p>
+            <Link
+              to="/profile"
+              className="whitespace-nowrap px-4 py-2 rounded-md text-white font-bold text-xs flex-shrink-0"
+              style={{ backgroundColor: "#960C22" }}
+            >
+              Create profile
+            </Link>
+          </div>
+        )}
+
         <div className="bg-cream rounded-lg p-4 space-y-3">
           <div>
             <label className="text-xs font-semibold text-ink/50 uppercase tracking-wide">

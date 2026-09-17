@@ -184,6 +184,17 @@ export default function Carpool() {
                   </span>
                 </div>
                 {p.bio && <p className="text-xs text-ink/70 pt-1">{p.bio}</p>}
+                <a
+                  href={`mailto:${p.email}?subject=${encodeURIComponent(
+                    "CoogCommute Carpool Match!"
+                  )}&body=${encodeURIComponent(
+                    `Hey ${p.name}, I saw your carpool profile on CoogCommute and wanted to connect!`
+                  )}`}
+                  className="inline-flex items-center gap-1.5 mt-1 px-3 py-1.5 rounded-md text-white font-bold text-xs"
+                  style={{ backgroundColor: "#960C22" }}
+                >
+                  Contact {p.name.split(" ")[0]}
+                </a>
               </motion.div>
             ))}
           </div>

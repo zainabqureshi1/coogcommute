@@ -1,16 +1,29 @@
-# React + Vite
+A carpool-matching and commute companion app for University of Houston students. Built from user research to a deployed, production application handling real user data.
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+**Live app**: https://coogcommute.vercel.app
 
-Currently, two official plugins are available:
+**Features**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- UH-verified authentication: passwordless magic-link sign-in restricted to @cougarnet.uh.edu addresses
 
-## React Compiler
+- Real carpool matching: students create a profile (neighborhood, schedule, optional women-only filter) and browse other verified students
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Driver ratings: after a completed ride, riders rate their driver; ratings are aggregated automatically and securely via database triggers
 
-## Expanding the Oxlint configuration
+- Gas & toll split calculator: live geocoding and distance calculation for any address, not a hardcoded lookup table
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+- Campus alerts: manually-curated UH-specific event and parking alerts
+
+- Responsive design: built mobile-first, tested across phone and desktop breakpoints
+
+
+**Tech stack**
+
+
+- Frontend: React, Vite, React Router, Tailwind CSS, Framer Motion
+
+- Backend/Database: Supabase (PostgreSQL, Auth, Row-Level Security)
+
+- Hosting: Vercel
+
+- Design: Figma (low- and high-fidelity wireframes, user flows)
